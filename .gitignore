@@ -1,0 +1,38 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment variables (contains API keys - DO NOT UPLOAD)
+.env
+.env.*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE configs
+.idea/
+.vscode/
+
+# Test outputs
+test_*.json
+direct_*.json
+*.stackdump
+
+# Test images
+test_image.png
+upload_test_*.png
+
+# LangGraph API local files
+.langgraph_api/
+
+# Playwright MCP cache
+.playwright-mcp/
