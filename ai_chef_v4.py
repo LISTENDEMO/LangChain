@@ -55,17 +55,25 @@ vl_model = ChatAnthropic(
 # 数据库存储
 class Store:
     def __init__(self, path="chef.db"):
+        import threading
         self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.execute("CREATE TABLE IF NOT EXISTS data(k TEXT PRIMARY KEY, v TEXT)")
         self.conn.commit()
+        self._lock = threading.Lock()
 
     def get(self, k):
-        r = self.conn.execute("SELECT v FROM data WHERE k=?", (k,)).fetchone()
-        return json.loads(r[0]) if r else None
+        with self._lock:
+            r = self.conn.execute("SELECT v FROM data WHERE k=?", (k,)).fetchone()
+            return json.loads(r[0]) if r else None
 
     def set(self, k, v):
-        self.conn.execute("INSERT OR REPLACE INTO data(k,v) VALUES(?,?)", (k, json.dumps(v, ensure_ascii=False)))
-        self.conn.commit()
+        with self._lock:
+            self.conn.execute("INSERT OR REPLACE INTO data(k,v) VALUES(?,?)", (k, json.dumps(v, ensure_ascii=False)))
+            self.conn.commit()
+
+    def close(self):
+        with self._lock:
+            self.conn.close()
 
 store = Store()
 
@@ -88,8 +96,17 @@ def stream_ai(prompt):
         yield f"[错误: {e}]"
 
 # 流式图片识别
+# 图片大小限制 (Base64 编码后约为原大小的 1.37 倍)
+MAX_IMAGE_SIZE_BASE64 = 500 * 1024 * 1.37  # 500KB 图片的 Base64 上限
+
 def stream_identify_and_recipe(image_base64):
     """流式识别图片并生成食谱"""
+    # 检查图片大小
+    if len(image_base64) > MAX_IMAGE_SIZE_BASE64:
+        yield "⚠️ 图片过大，请上传小于 500KB 的图片\n\n"
+        yield "💡 建议：使用 JPG 格式，或在上传前压缩图片\n"
+        return
+
     try:
         # 1. 先发送识别提示
         yield "📷 正在识别食材...\n\n"

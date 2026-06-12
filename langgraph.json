@@ -1,7 +1,7 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "chef": "./ai_chef_react.py:graph"
+    "chef": "./ai_chef_graph.py:graph"
   },
   "env": "./.env"
 }
